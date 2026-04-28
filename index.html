@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DeepSeek V4：百万 Token 时代的开源新王者</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;700;900&family=Noto+Serif+SC:wght@700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #fffdf8;
+    --ink: #18212f;
+    --muted: #667085;
+    --soft: #f5f8ff;
+    --line: #d9e2ef;
+    --blue: #185adb;
+    --cyan: #02a6b5;
+    --orange: #ff6b35;
+    --green: #16a36a;
+    --yellow: #f6b93b;
+    --shadow: 0 18px 60px rgba(24, 33, 47, 0.12);
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    font-family: Inter, "Noto Sans SC", system-ui, sans-serif;
+    color: var(--ink);
+    background:
+      radial-gradient(circle at 8% 4%, rgba(255, 107, 53, 0.12), transparent 24rem),
+      radial-gradient(circle at 94% 2%, rgba(2, 166, 181, 0.14), transparent 25rem),
+      linear-gradient(180deg, #f7fbff 0, var(--paper) 34rem);
+    line-height: 1.78;
+    overflow-x: hidden;
+  }
+
+  a { color: inherit; }
+  img { max-width: 100%; display: block; }
+
+  .progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 20;
+    width: 0%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--orange), var(--cyan), var(--blue));
+  }
+
+  .wrap {
+    width: min(1120px, calc(100% - 36px));
+    margin: 0 auto;
+  }
+
+  .hero {
+    min-height: 92vh;
+    display: grid;
+    align-items: center;
+    padding: 34px 0 48px;
+  }
+
+  .hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.95fr) minmax(340px, 1.05fr);
+    gap: 46px;
+    align-items: center;
+  }
+
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    width: fit-content;
+    padding: 8px 13px;
+    border: 1px solid rgba(24, 90, 219, 0.22);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.7);
+    color: var(--blue);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .eyebrow::before {
+    content: "";
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 0 5px rgba(22, 163, 106, 0.14);
+  }
+
+  h1 {
+    margin: 22px 0 18px;
+    font-family: "Noto Serif SC", "Noto Sans SC", serif;
+    font-size: clamp(42px, 6.1vw, 78px);
+    line-height: 1.06;
+    letter-spacing: 0;
+  }
+
+  .hero h1 span {
+    color: var(--blue);
+    text-decoration: underline;
+    text-decoration-thickness: 12px;
+    text-decoration-color: rgba(255, 185, 59, 0.42);
+    text-underline-offset: -5px;
+  }
+
+  .lead {
+    max-width: 620px;
+    margin: 0;
+    color: #42526b;
+    font-size: 18px;
+  }
+
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 28px;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0 17px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: #fff;
+    text-decoration: none;
+    font-weight: 800;
+    box-shadow: 0 10px 24px rgba(24, 33, 47, 0.08);
+  }
+
+  .btn.primary {
+    border-color: transparent;
+    color: #fff;
+    background: linear-gradient(135deg, var(--blue), var(--cyan));
+  }
+
+  .hero-card {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .hero-card::before {
+    content: "";
+    position: absolute;
+    inset: -18px;
+    z-index: -1;
+    border-radius: 34px;
+    background: conic-gradient(from 160deg, rgba(24, 90, 219, 0.2), rgba(255, 107, 53, 0.22), rgba(2, 166, 181, 0.22), rgba(24, 90, 219, 0.2));
+    filter: blur(2px);
+  }
+
+  .hero-image {
+    width: 100%;
+    border: 10px solid #fff;
+    border-radius: 26px;
+    box-shadow: var(--shadow);
+    transform: rotate(1.2deg);
+  }
+
+  .ticker {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 18px;
+  }
+
+  .ticker div {
+    min-height: 112px;
+    padding: 16px;
+    border: 1px solid rgba(24, 90, 219, 0.16);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.76);
+    box-shadow: 0 10px 30px rgba(24, 33, 47, 0.08);
+  }
+
+  .ticker strong {
+    display: block;
+    font-family: "JetBrains Mono", monospace;
+    color: var(--orange);
+    font-size: clamp(24px, 3vw, 34px);
+    line-height: 1;
+  }
+
+  .ticker span {
+    display: block;
+    margin-top: 9px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  .quick-nav {
+    position: sticky;
+    top: 12px;
+    z-index: 10;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    overflow-x: auto;
+    padding: 10px;
+    margin: 0 auto 42px;
+    border: 1px solid rgba(24, 90, 219, 0.12);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.82);
+    box-shadow: 0 12px 34px rgba(24, 33, 47, 0.08);
+    backdrop-filter: blur(12px);
+  }
+
+  .quick-nav a {
+    flex: 0 0 auto;
+    padding: 8px 13px;
+    border-radius: 999px;
+    color: #42526b;
+    font-size: 13px;
+    font-weight: 800;
+    text-decoration: none;
+  }
+
+  .quick-nav a:hover,
+  .quick-nav a.active {
+    color: #fff;
+    background: var(--blue);
+  }
+
+  main {
+    display: grid;
+    grid-template-columns: minmax(0, 760px) minmax(230px, 1fr);
+    gap: 48px;
+    align-items: start;
+  }
+
+  article {
+    min-width: 0;
+  }
+
+  section {
+    scroll-margin-top: 96px;
+    margin: 0 0 70px;
+  }
+
+  .section-kicker {
+    width: fit-content;
+    margin-bottom: 10px;
+    color: var(--orange);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  h2 {
+    margin: 0 0 22px;
+    font-family: "Noto Serif SC", "Noto Sans SC", serif;
+    font-size: clamp(28px, 4.4vw, 44px);
+    line-height: 1.18;
+    letter-spacing: 0;
+  }
+
+  h3 {
+    margin: 34px 0 12px;
+    color: var(--blue);
+    font-size: 21px;
+    line-height: 1.45;
+  }
+
+  p {
+    margin: 0 0 18px;
+    color: #344054;
+    font-size: 17px;
+  }
+
+  strong { color: var(--ink); }
+
+  .callout {
+    margin: 28px 0;
+    padding: 22px 24px;
+    border: 1px solid rgba(24, 90, 219, 0.15);
+    border-left: 7px solid var(--blue);
+    border-radius: 8px;
+    background: linear-gradient(135deg, #f4f8ff, #fff);
+    box-shadow: 0 14px 36px rgba(24, 33, 47, 0.08);
+  }
+
+  .callout p {
+    margin: 0;
+    color: var(--ink);
+    font-size: 20px;
+    font-weight: 800;
+    line-height: 1.55;
+  }
+
+  .mono {
+    font-family: "JetBrains Mono", monospace;
+    color: var(--orange);
+  }
+
+  .note {
+    margin: 20px 0;
+    padding: 16px 18px;
+    border: 1px dashed rgba(2, 166, 181, 0.42);
+    border-radius: 8px;
+    background: rgba(2, 166, 181, 0.07);
+    color: #315466;
+    font-size: 15px;
+  }
+
+  .data-grid,
+  .bench-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin: 26px 0;
+  }
+
+  .data-card,
+  .bench-card {
+    position: relative;
+    min-height: 136px;
+    padding: 19px;
+    border: 1px solid rgba(24, 90, 219, 0.13);
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 14px 36px rgba(24, 33, 47, 0.07);
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .data-card:hover,
+  .bench-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 46px rgba(24, 33, 47, 0.12);
+  }
+
+  .data-card::after,
+  .bench-card::after {
+    content: "";
+    position: absolute;
+    right: -26px;
+    bottom: -26px;
+    width: 86px;
+    height: 86px;
+    border-radius: 50%;
+    background: rgba(255, 107, 53, 0.12);
+  }
+
+  .label {
+    color: var(--muted);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .value {
+    display: block;
+    margin: 9px 0 4px;
+    color: var(--blue);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 34px;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .desc {
+    color: #667085;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .table-wrap {
+    margin: 26px 0;
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 16px 40px rgba(24, 33, 47, 0.08);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 650px;
+  }
+
+  th, td {
+    padding: 14px 16px;
+    border-bottom: 1px solid #edf1f7;
+    text-align: left;
+    font-size: 15px;
+  }
+
+  th {
+    color: #fff;
+    background: var(--blue);
+    font-weight: 800;
+  }
+
+  th:first-child { background: #253047; }
+  tr:last-child td { border-bottom: 0; }
+  tbody tr:nth-child(even) td { background: #f8fbff; }
+
+  .media {
+    margin: 28px 0 30px;
+  }
+
+  .media img {
+    width: 100%;
+    border-radius: 8px;
+    border: 1px solid rgba(24, 90, 219, 0.14);
+    background: #fff;
+    box-shadow: 0 16px 42px rgba(24, 33, 47, 0.1);
+    cursor: zoom-in;
+  }
+
+  .caption {
+    margin-top: 9px;
+    color: var(--muted);
+    font-size: 13px;
+    text-align: center;
+  }
+
+  .fun img {
+    border: 6px solid #fff;
+    transform: rotate(-0.6deg);
+  }
+
+  .fun .caption {
+    color: var(--orange);
+    font-weight: 800;
+  }
+
+  .side {
+    position: sticky;
+    top: 90px;
+  }
+
+  .side-box {
+    padding: 18px;
+    border: 1px solid rgba(24, 90, 219, 0.13);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.78);
+    box-shadow: 0 14px 38px rgba(24, 33, 47, 0.08);
+  }
+
+  .side-title {
+    margin: 0 0 12px;
+    font-weight: 900;
+  }
+
+  .timeline {
+    display: grid;
+    gap: 12px;
+  }
+
+  .timeline div {
+    padding-left: 13px;
+    border-left: 3px solid var(--line);
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .timeline strong {
+    display: block;
+    color: var(--ink);
+  }
+
+  .footer {
+    margin-top: 20px;
+    padding: 54px 0 70px;
+    border-top: 1px solid var(--line);
+    text-align: center;
+  }
+
+  .footer blockquote {
+    margin: 0 auto 22px;
+    max-width: 780px;
+    font-family: "Noto Serif SC", serif;
+    font-size: clamp(25px, 4vw, 42px);
+    font-weight: 900;
+    line-height: 1.22;
+  }
+
+  .footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(18px);
+    transition: opacity 0.55s ease, transform 0.55s ease;
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    display: none;
+    place-items: center;
+    padding: 24px;
+    background: rgba(10, 16, 26, 0.82);
+  }
+
+  .lightbox.open { display: grid; }
+  .lightbox img {
+    max-height: 88vh;
+    border-radius: 8px;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.35);
+  }
+
+  @media (max-width: 920px) {
+    .hero-grid,
+    main {
+      grid-template-columns: 1fr;
+    }
+    .side { display: none; }
+    .hero { min-height: auto; }
+  }
+
+  @media (max-width: 620px) {
+    .wrap { width: min(100% - 26px, 1120px); }
+    .ticker,
+    .data-grid,
+    .bench-grid {
+      grid-template-columns: 1fr;
+    }
+    .quick-nav {
+      border-radius: 8px;
+    }
+    .lead,
+    p {
+      font-size: 16px;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+
+<header class="hero wrap" id="top">
+  <div class="hero-grid">
+    <div>
+      <div class="eyebrow">2026.04.24 / Open Source AI</div>
+      <h1>DeepSeek V4：<span>百万 Token</span> 长上下文的新范式</h1>
+      <p class="lead">当完整代码仓库、论文集合和长篇资料可以进入同一个上下文窗口，模型的能力边界就不再只是“回答问题”，而是开始面向系统级理解、跨文档推理和长周期任务执行。</p>
+      <div class="hero-actions">
+        <a class="btn primary" href="#overview">开始阅读</a>
+        <a class="btn" href="#bench">看性能数据</a>
+      </div>
+    </div>
+    <div class="hero-card">
+      <img class="hero-image" src="header_image.jpg" alt="DeepSeek V4 科技头图">
+      <div class="ticker">
+        <div><strong>1.6T</strong><span>旗舰版总参数，MoE 架构拉满</span></div>
+        <div><strong>1M</strong><span>原生百万 Token 上下文</span></div>
+        <div><strong>#23</strong><span>Codeforces 全球级推理表现</span></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<nav class="quick-nav wrap" aria-label="文章导航">
+  <a href="#overview">开场</a>
+  <a href="#models">双版本</a>
+  <a href="#tech">技术点</a>
+  <a href="#efficiency">效率</a>
+  <a href="#bench">性能</a>
+  <a href="#posttrain">后训练</a>
+  <a href="#opensource">开源</a>
+</nav>
+
+<main class="wrap">
+  <article>
+    <section id="overview" class="reveal">
+      <div class="section-kicker">01 / WHY IT MATTERS</div>
+      <h2>长上下文能力，正在成为基础模型的新分水岭</h2>
+      <p>过去一年，DeepSeek 在开源基础模型领域持续推进架构创新：V2 通过 MLA 架构提升注意力效率，V3 以 MoE 路线验证稀疏激活的大规模能力，R1 则进一步强化推理表现。现在 V4 预览版的核心卖点非常明确：<strong>百万 Token 超长上下文，而且是原生架构级支持</strong>。</p>
+      <p>这意味着许多过去依赖复杂 RAG 管线、分段摘要和多轮拼接的任务，可以转向更直接的处理方式：让模型在更完整的上下文中完成理解、检索、推理和生成。</p>
+      <div class="callout">
+        <p>记住三个数字：<span class="mono">1.6T</span> 参数、<span class="mono">1M</span> Token、<span class="mono">Codeforces #23</span>。</p>
+      </div>
+      <p>对开发者来说，这不是“窗口大一点”这么简单。它改变的是工作方式：大型代码审查、跨文档研究、长周期 Agent 任务，都开始有了更像“整块处理”的可能性。</p>
+    </section>
+
+    <div class="media fun reveal">
+      <img src="images/fun/meme_1.jpg" alt="程序员面对百万 Token 的趣味插图">
+      <div class="caption">百万 Token 上下文带来的核心变化：更多信息可以在同一任务空间内被统一处理。</div>
+    </div>
+
+    <section id="models" class="reveal">
+      <div class="section-kicker">02 / TWO FLAVORS</div>
+      <h2>双版本策略：旗舰性能与高效部署并行</h2>
+      <p>DeepSeek V4 这次分为 V4-Pro 和 V4-Flash。前者负责冲顶，后者负责把能力变得更便宜、更容易落地。重点是：<strong>两个版本都支持 1M Token 上下文</strong>。</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>维度</th><th>V4-Pro</th><th>V4-Flash</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>总参数</td><td><strong>1.6T</strong></td><td>284B</td></tr>
+            <tr><td>激活参数</td><td><strong>49B</strong></td><td>13B</td></tr>
+            <tr><td>上下文长度</td><td><strong>1M Token</strong></td><td><strong>1M Token</strong></td></tr>
+            <tr><td>训练数据</td><td>33T Tokens</td><td>32T Tokens</td></tr>
+            <tr><td>Transformer 层数</td><td>61</td><td>43</td></tr>
+            <tr><td>路由专家数</td><td>384</td><td>256</td></tr>
+            <tr><td>定位</td><td>旗舰性能，对标顶级闭源</td><td>轻量高效，适合先用起来</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>面向复杂推理、Agent 编排和高难度代码任务，V4-Pro 提供更完整的能力上限；面向线上产品、成本敏感型调用和低延迟场景，V4-Flash 则更强调推理效率与部署可行性。</p>
+      <div class="note"><strong>1M Token 是什么概念？</strong>大约可以理解成几十万到上百万字级别的上下文容量，足够塞进一批论文、长项目文档，或者一个中型代码仓库的核心内容。</div>
+    </section>
+
+    <section id="tech" class="reveal">
+      <div class="section-kicker">03 / TECH SPARKS</div>
+      <h2>五项关键设计，支撑百万 Token 可用性</h2>
+
+      <h3>CSA + HCA：在压缩空间中保留关键信息</h3>
+      <p>传统注意力机制在超长上下文下容易面临计算量快速增长的问题。V4 的思路是先压缩 KV 缓存，再在压缩后的表示空间中选择重点区域处理，相当于先建立目录和索引，再定位关键内容。</p>
+      <div class="media">
+        <img src="images/attention_mechanism.jpg" alt="CSA 和 HCA 混合注意力机制示意图">
+        <div class="caption">CSA + HCA：在降低长序列计算压力的同时，尽量保留高价值上下文信息。</div>
+      </div>
+
+      <h3>MoE 专家路由：按需激活，控制计算成本</h3>
+      <p>MoE 的关键优势在于，不是每个 Token 都调用全部参数，而是按需激活一小部分专家模块。可以将其理解为一种高效分流机制：不同输入进入不同处理路径，从而兼顾模型容量与推理成本。</p>
+      <div class="media fun">
+        <img src="images/fun/meme_3.jpg" alt="MoE 专家路由趣味插图">
+        <div class="caption">MoE 路由机制：将不同 Token 分配给更匹配的专家模块，提高参数利用效率。</div>
+      </div>
+
+      <h3>mHC 超连接：增强深层网络中的信号稳定性</h3>
+      <p>在 61 层网络中，信息跨层传播容易出现衰减或失真。mHC 的目标是增强层间信号稳定性，降低深层网络训练后期的损失震荡风险。</p>
+      <div class="media">
+        <img src="images/hyperconnections.jpg" alt="mHC 超连接示意图">
+        <div class="caption">更稳定的层间信号流，让深网络训练少一些后期震荡。</div>
+      </div>
+
+      <h3>Muon 优化器：改善大规模训练的收敛稳定性</h3>
+      <p>Muon 通过矩阵正交化约束参数更新方向，帮助模型更稳定地收敛。相较传统优化器，它更强调更新方向的结构性约束，从而降低训练过程中的震荡。</p>
+      <div class="media">
+        <img src="images/muon_optimizer.jpg" alt="Muon 优化器收敛曲线">
+        <div class="caption">优化器设计直接影响大规模模型训练的效率、稳定性与最终质量。</div>
+      </div>
+
+      <h3>FP4 量化：以更低精度缓解存储与计算压力</h3>
+      <p>1.6T 参数如果都按高精度存储，显存压力会非常夸张。V4 使用 FP4 来压缩专家权重，在尽量保持质量的同时显著降低存储和计算负担。</p>
+      <div class="media fun">
+        <img src="images/fun/meme_4.jpg" alt="FP4 和 FP16 存储对比趣味插图">
+        <div class="caption">FP4 的价值在于显著降低权重存储成本，并为更高效的推理部署创造空间。</div>
+      </div>
+      <div class="media">
+        <img src="images/fp4_quantization.jpg" alt="FP4 量化示意图">
+        <div class="caption">通过量化感知训练，低精度表示可以在效率与质量之间取得更可控的平衡。</div>
+      </div>
+
+      <h3>国产算力全栈训练：从芯片适配到系统优化</h3>
+      <p>V4 的另一个看点，是围绕国产算力完成训练和适配。它不只是模型能力展示，也是在证明一条更自主的技术路线可以跑通。</p>
+      <div class="media fun">
+        <img src="images/fun/meme_6.jpg" alt="国产芯片训练趣味插图">
+        <div class="caption">国产算力路线的关键，不只是硬件可用，更在于软件栈、算子和训练系统的协同优化。</div>
+      </div>
+      <div class="media">
+        <img src="images/ascend_chip.jpg" alt="昇腾芯片示意图">
+        <div class="caption">从算子迁移到训练稳定性，真正难的是系统工程。</div>
+      </div>
+    </section>
+
+    <section id="efficiency" class="reveal">
+      <div class="section-kicker">04 / EFFICIENCY</div>
+      <h2>效率提升：让百万 Token 从能力展示走向实际可用</h2>
+      <p>长上下文能力如果伴随不可接受的推理成本，就很难进入真实业务。V4 的关键价值在于，在 1M Token 场景下同时降低计算量与 KV Cache 占用。</p>
+      <div class="media fun">
+        <img src="images/fun/meme_2.jpg" alt="V3.2 与 V4 效率数据对比趣味插图">
+        <div class="caption">相较上一代长上下文方案，V4 在推理计算与缓存占用上都进一步压缩成本。</div>
+      </div>
+      <div class="data-grid">
+        <div class="data-card"><div class="label">V4-Pro / V3.2</div><span class="value">27%</span><div class="desc">单 Token 推理 FLOPs</div></div>
+        <div class="data-card"><div class="label">V4-Pro / V3.2</div><span class="value">10%</span><div class="desc">KV Cache 存储占用</div></div>
+        <div class="data-card"><div class="label">V4-Flash / V3.2</div><span class="value">10%</span><div class="desc">单 Token 推理 FLOPs</div></div>
+        <div class="data-card"><div class="label">V4-Flash / V3.2</div><span class="value">7%</span><div class="desc">KV Cache 存储占用</div></div>
+      </div>
+      <div class="media">
+        <img src="images/chart_efficiency.png" alt="V4 效率对比图">
+        <div class="caption">数值越低表示单位任务成本越低，这决定了长上下文能否进入高频使用场景。</div>
+      </div>
+    </section>
+
+    <section id="bench" class="reveal">
+      <div class="section-kicker">05 / BENCHMARKS</div>
+      <h2>综合评测：知识、推理、Agent 与长上下文同步提升</h2>
+      <p>从公开评测维度看，V4 在知识问答、复杂推理、软件工程 Agent 和长上下文理解方面都展示出较强竞争力。尤其在推理与代码相关任务中，它已进入顶级模型的竞争区间。</p>
+      <div class="bench-grid">
+        <div class="bench-card"><div class="label">SimpleQA</div><span class="value">57.9</span><div class="desc">知识问答强势领先</div></div>
+        <div class="bench-card"><div class="label">MMLU-Pro</div><span class="value">87.5</span><div class="desc">综合知识能力扎实</div></div>
+        <div class="bench-card"><div class="label">GPQA</div><span class="value">90.1</span><div class="desc">高难科学问答表现亮眼</div></div>
+        <div class="bench-card"><div class="label">Codeforces</div><span class="value">3206</span><div class="desc">全球级竞赛编程 rating</div></div>
+      </div>
+      <div class="media">
+        <img src="images/chart_knowledge_radar.png" alt="知识能力雷达图">
+        <div class="caption">知识能力对比：V4-Pro-Max 在多项问答与综合知识评测中表现突出。</div>
+      </div>
+      <div class="media fun">
+        <img src="images/fun/meme_5.jpg" alt="Codeforces 全球排名趣味插图">
+        <div class="caption">Codeforces Rating 体现的是高强度算法推理与代码生成能力，而不只是常规代码补全。</div>
+      </div>
+      <p>Agent 能力也值得关注：SWE-Verified、Terminal Bench、BrowseComp 等任务衡量的是模型能不能更像一个能动手的开发搭档，而不只是会聊天。</p>
+      <div class="media fun">
+        <img src="images/fun/meme_7.jpg" alt="Agent 自动执行开发任务趣味插图">
+        <div class="caption">Agent 能力的关键在于持续执行、工具调用、错误修复与多步骤任务闭环。</div>
+      </div>
+      <div class="media">
+        <img src="images/chart_agent_bar.png" alt="Agent 能力对比图">
+        <div class="caption">Agent 能力越强，越接近在真实开发流程中承担连续性任务。</div>
+      </div>
+      <div class="media">
+        <img src="images/chart_context.png" alt="百万 Token 长上下文能力对比图">
+        <div class="caption">长上下文评测的核心不只是窗口长度，而是模型在远距离信息检索与综合推理中的准确性。</div>
+      </div>
+    </section>
+
+    <section id="posttrain" class="reveal">
+      <div class="section-kicker">06 / POST-TRAINING</div>
+      <h2>后训练流程：领域专家能力的统一蒸馏</h2>
+      <p>如果说预训练负责构建通用知识基础，后训练则决定模型在具体任务上的可用性。V4 的思路是先在数学、编程、Agent、指令遵循等领域训练专家模型，再通过蒸馏和统一优化，将多种能力整合到同一个模型中。</p>
+      <div class="callout">
+        <p>三种模式：Non-Think 快速回答，Think 深度分析，Think Max 极限推理。</p>
+      </div>
+      <p>这种设计让模型可以根据任务复杂度调整推理深度：常规问答保持响应效率，复杂推理则投入更充分的计算预算。对应用方而言，这有助于在质量、延迟和成本之间建立更灵活的平衡。</p>
+    </section>
+
+    <section id="opensource" class="reveal">
+      <div class="section-kicker">07 / OPEN SOURCE</div>
+      <h2>开源价值：推动长上下文能力进入社区生态</h2>
+      <p>模型权重、推理代码、技术细节、架构实现都开放出来，这对社区的意义很大。它把百万 Token 长上下文从少数闭源产品的专属能力，推向更多开发者能研究、复现、改造的方向。</p>
+      <p>更重要的是，开源让研究者和开发者可以在同一技术基础上验证、复现和改进方案。对于长上下文模型的发展来说，这种透明度本身就是生态建设的一部分。</p>
+    </section>
+  </article>
+
+  <aside class="side" aria-label="阅读摘要">
+    <div class="side-box">
+      <p class="side-title">这篇在讲什么</p>
+      <div class="timeline">
+        <div><strong>百万上下文</strong>从“演示能力”走向可用基础设施。</div>
+        <div><strong>架构创新</strong>CSA/HCA、MoE、mHC、FP4 一起降成本。</div>
+        <div><strong>性能表现</strong>知识、推理、Agent、长上下文全面冲高。</div>
+        <div><strong>开源意义</strong>把强能力交给社区一起拆、一起改、一起用。</div>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<footer class="footer wrap">
+  <blockquote>百万 Token 不是终点，而是新一轮应用想象力的起点。</blockquote>
+  <div class="footer-links">
+    <a class="btn" href="https://huggingface.co/collections/deepseek-ai/deepseek-v4" target="_blank" rel="noreferrer">HuggingFace Collection</a>
+    <a class="btn" href="https://chat.deepseek.com" target="_blank" rel="noreferrer">DeepSeek 官网</a>
+    <a class="btn primary" href="#top">回到顶部</a>
+  </div>
+</footer>
+
+<div class="lightbox" id="lightbox" aria-hidden="true">
+  <img src="" alt="放大预览">
+</div>
+
+<script>
+  const progress = document.querySelector("#progress");
+  const navLinks = [...document.querySelectorAll(".quick-nav a")];
+  const sections = [...document.querySelectorAll("section[id]")];
+
+  const updateProgress = () => {
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    const pct = max > 0 ? (window.scrollY / max) * 100 : 0;
+    progress.style.width = `${pct}%`;
+  };
+
+  const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) entry.target.classList.add("visible");
+    });
+  }, { threshold: 0.12 });
+
+  document.querySelectorAll(".reveal").forEach((item) => revealObserver.observe(item));
+
+  const activeObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      navLinks.forEach((link) => {
+        link.classList.toggle("active", link.getAttribute("href") === `#${entry.target.id}`);
+      });
+    });
+  }, { rootMargin: "-30% 0px -55% 0px" });
+
+  sections.forEach((section) => activeObserver.observe(section));
+  window.addEventListener("scroll", updateProgress, { passive: true });
+  updateProgress();
+
+  const lightbox = document.querySelector("#lightbox");
+  const lightboxImage = lightbox.querySelector("img");
+  document.querySelectorAll(".media img, .hero-image").forEach((image) => {
+    image.addEventListener("click", () => {
+      lightboxImage.src = image.src;
+      lightboxImage.alt = image.alt;
+      lightbox.classList.add("open");
+      lightbox.setAttribute("aria-hidden", "false");
+    });
+  });
+  lightbox.addEventListener("click", () => {
+    lightbox.classList.remove("open");
+    lightbox.setAttribute("aria-hidden", "true");
+  });
+</script>
+</body>
+</html>
